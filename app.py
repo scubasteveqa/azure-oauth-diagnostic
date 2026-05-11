@@ -1,12 +1,10 @@
-import os
-
 from databricks.sdk import WorkspaceClient
 from posit import connect
 from shiny import reactive, render
 from shiny.express import input, session, ui
 
 
-DATABRICKS_HOST_FROM_ENV = os.environ.get("DATABRICKS_HOST", "")
+AZURE_DATABRICKS_WORKSPACE_HOST = "https://adb-138962681435081.1.azuredatabricks.net"
 
 
 ui.page_opts(title="Azure OAuth Diagnostic", fillable=False)
@@ -50,13 +48,7 @@ with ui.card():
             items.append(ui.tags.li(f"Content title: {c.get('title')}"))
         except Exception as e:
             items.append(ui.tags.li(f"Content lookup error: {type(e).__name__}: {e}"))
-        if DATABRICKS_HOST_FROM_ENV:
-            items.append(ui.tags.li(f"DATABRICKS_HOST (env): {DATABRICKS_HOST_FROM_ENV}"))
-        else:
-            items.append(ui.tags.li(
-                "DATABRICKS_HOST env var not set — Azure integrations don't auto-inject "
-                "a workspace host, so enter it manually below."
-            ))
+        items.append(ui.tags.li(f"Workspace host: {AZURE_DATABRICKS_WORKSPACE_HOST}"))
         return ui.tags.ul(*items)
 
 
@@ -125,18 +117,15 @@ with ui.card():
     ui.card_header("Step 2: Verify Azure Databricks auth without a warehouse")
     ui.markdown(
         "Uses the Azure AD access token from Step 1 to call **`WorkspaceClient.current_user.me()`** "
-        "against an Azure Databricks workspace. This control-plane SCIM call does not "
+        "against the Azure Databricks workspace. This control-plane SCIM call does not "
         "require a running SQL warehouse or compute cluster — it only proves that the "
         "AAD token is accepted by Azure Databricks and identifies the user.\n\n"
-        "Enter your Azure Databricks workspace host below "
-        "(e.g., `https://adb-xxxxxxxxxxxxxxx.x.azuredatabricks.net`). "
-        "Pre-populated from `DATABRICKS_HOST` if set."
+        "The workspace host is pre-filled below; edit to test against a different workspace."
     )
     ui.input_text(
         "workspace_host",
         "Azure Databricks workspace host",
-        value=DATABRICKS_HOST_FROM_ENV,
-        placeholder="https://adb-xxxxxxxxxxxxxxx.x.azuredatabricks.net",
+        value=AZURE_DATABRICKS_WORKSPACE_HOST,
         width="100%",
     )
     ui.input_action_button("verify_auth", "Verify Azure Databricks auth", class_="btn-primary")
